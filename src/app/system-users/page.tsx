@@ -99,10 +99,10 @@ export default function SystemUsersPage() {
                 <table>
                   <thead>
                     <tr>
-                      <th>User</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Status</th>
+                      <th style={{ padding: '16px 24px' }}>User</th>
+                      <th style={{ padding: '16px 24px' }}>Email</th>
+                      <th style={{ padding: '16px 24px' }}>Role</th>
+                      <th style={{ padding: '16px 24px' }}>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -121,9 +121,11 @@ export default function SystemUsersPage() {
                     ) : (
                       users.map((u) => (
                         <tr key={u.id}>
-                          <td style={{ fontWeight: 500 }}>{u.name}</td>
-                          <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
-                          <td>
+                          <td style={{ fontWeight: 500, padding: '16px 24px' }}>
+                            {u.name || (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : (u.email === 'admin@mwums.com' ? 'System Admin' : 'Unknown User'))}
+                          </td>
+                          <td style={{ color: 'var(--text-muted)', padding: '16px 24px' }}>{u.email}</td>
+                          <td style={{ padding: '16px 24px' }}>
                             <div style={{ 
                               display: 'inline-block', 
                               padding: '4px 10px', 
@@ -137,9 +139,9 @@ export default function SystemUsersPage() {
                               {u.role.replace('_', ' ')}
                             </div>
                           </td>
-                          <td>
-                            <span className={`badge ${u.status === 'active' ? 'badge-green' : 'badge-gray'}`}>
-                              {u.status === 'active' ? 'Active' : 'Inactive'}
+                          <td style={{ padding: '16px 24px' }}>
+                            <span className={`badge ${u.status?.toLowerCase() === 'active' ? 'badge-green' : 'badge-gray'}`}>
+                              {u.status?.toLowerCase() === 'active' ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                         </tr>
