@@ -90,3 +90,87 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const auth = await requirePermission(req, 'canManageSystemUsers');
+    if (!auth.authorized) return NextResponse.json({ error: "Only administrators can update system users." }, { status: 403 });
+
+    const data = await req.json();
+    const { id, name, role, status } = data;
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing user ID" }, { status: 400 });
+    }
+
+    const updates: any = {};
+    if (name) updates.name = name;
+    if (role) updates.role = role;
+    if (status) updates.status = status;
+
+    await adminDb.collection('users').doc(id).update(updates);
+
+    if (name) {
+      await adminAuth.updateUser(id, { displayName: name });
+    }
+    if (status) {
+      // In Firebase Auth, disabled true/false controls login access
+      await adminAuth.updateUser(id, { disabled: status.toLowerCase() === 'inactive' });
+    }
+
+    await adminDb.collection('auditLogs').add({
+      timestamp: new Date().toISOString(),
+      actorId: auth.uid,
+      actorEmail: auth.email,
+      actorRole: auth.role,
+      action: 'UPDATE_SYSTEM_USER',
+      entityType: 'USER',
+      entityId: id,
+      description: `Updated system user ${id}: ${JSON.stringify(updates)}`,
+      module: 'Central Admin',
+    });
+
+    return NextResponse.json({ message: "System user updated successfully" });
+  } catch (error: any) {
+    console.error("Error updating system user:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const auth = await requirePermission(req, 'canManageSystemUsers');
+    if (!auth.authorized) return NextResponse.json({ error: "Only administrators can delete system users." }, { status: 403 });
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing user ID" }, { status: 400 });
+    }
+
+    // 1. Delete from Firestore
+    await adminDb.collection('users').doc(id).delete();
+    
+    // 2. Delete from Firebase Auth
+    await adminAuth.deleteUser(id);
+
+    // 3. Audit Log
+    await adminDb.collection('auditLogs').add({
+      timestamp: new Date().toISOString(),
+      actorId: auth.uid,
+      actorEmail: auth.email,
+      actorRole: auth.role,
+      action: 'DELETE_SYSTEM_USER',
+      entityType: 'USER',
+      entityId: id,
+      description: `Deleted system user ${id}`,
+      module: 'Central Admin',
+    });
+
+    return NextResponse.json({ message: "System user deleted successfully" });
+  } catch (error: any) {
+    console.error("Error deleting system user:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
