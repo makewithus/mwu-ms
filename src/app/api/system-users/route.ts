@@ -74,9 +74,9 @@ export async function POST(req: NextRequest) {
     // 3. Audit Log
     await adminDb.collection('auditLogs').add({
       timestamp: new Date().toISOString(),
-      actorId: auth.user.uid,
-      actorEmail: auth.user.email,
-      actorRole: auth.user.role,
+      actorId: auth.uid,
+      actorEmail: auth.email,
+      actorRole: auth.role,
       action: 'CREATE_SYSTEM_USER',
       entityType: 'USER',
       entityId: userRecord.uid,
