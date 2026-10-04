@@ -12,8 +12,21 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers || {});
   headers.set('Authorization', `Bearer ${token}`);
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers
   });
+
+  // Provide a safe wrapper around response.json()
+  const originalJson = response.json.bind(response);
+  response.json = async () => {
+    try {
+      const text = await response.text();
+      return text ? JSON.parse(text) : {};
+    } catch (e) {
+      return { error: 'Invalid JSON response from server' };
+    }
+  };
+
+  return response;
 }
