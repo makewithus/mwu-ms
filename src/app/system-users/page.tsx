@@ -169,20 +169,20 @@ export default function SystemUsersPage() {
               
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Name</label>
+                  <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
                   <input required type="text" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email Address</label>
+                  <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
                   <input required type="email" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password</label>
+                  <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
                   <input required type="text" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-                  <p className="text-xs text-gray-500 mt-2">Make sure to securely share this with the user.</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Make sure to securely share this with the user.</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Role</label>
+                  <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Role</label>
                   <select required className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                     <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Administrator</option>
