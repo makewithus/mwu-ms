@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -40,15 +42,15 @@ export default function ClientsPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchClients = async (force = false) => {
-    if (clients.length === 0) setLoading(true);
-    try {
-      const data = await apiGet<{ clients?: any[] }>('/api/clients', { force });
-      setClients(data.clients || []);
-    } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
-  };
+  useEffect(() => {
+    setLoading(true);
+    const unsubClients = onSnapshot(query(collection(db, "clients"), orderBy("createdAt", "desc")), (snapshot) => {
+      setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (error) => { console.error(error); setLoading(false); });
 
-  useEffect(() => { fetchClients(); }, []);
+    return () => unsubClients();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,12 +62,7 @@ export default function ClientsPage() {
       const saved = await res.json();
       if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
       invalidateApiCache(['/api/clients', '/api/dashboard/stats']);
-      setClients(prev => editingEntity
-        ? prev.map(client => client.id === editingEntity.id ? { ...client, ...formData, updatedAt: new Date().toISOString() } : client)
-        : [{ ...saved, ...formData }, ...prev]
-      );
       resetForm();
-      void fetchClients(true);
       toast.success(editingEntity ? 'Client updated successfully.' : 'Client added successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save client. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -82,8 +79,6 @@ export default function ClientsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Delete failed');
       invalidateApiCache(['/api/clients', '/api/dashboard/stats']);
-      setClients(prev => prev.filter(client => client.id !== id));
-      void fetchClients(true);
       toast.success('Client deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete client. Please try again.'); }
   };

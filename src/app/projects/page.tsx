@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -42,19 +44,23 @@ export default function ProjectsPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchData = async (force = false) => {
-    if (projects.length === 0) setLoading(true);
-    try {
-      const [projData, clientsData] = await Promise.all([
-        apiGet<{ projects?: any[] }>('/api/projects', { force }),
-        apiGet<{ clients?: any[] }>('/api/clients', { force })
-      ]);
-      setProjects(projData.projects || []);
-      setClients(clientsData.clients || []);
-    } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
-  };
+  useEffect(() => {
+    setLoading(true);
+    let loaders = { projects: true, clients: true };
+    const checkLoading = () => { if (!loaders.projects && !loaders.clients) setLoading(false); };
 
-  useEffect(() => { fetchData(); }, []);
+    const unsubProjects = onSnapshot(query(collection(db, "projects"), orderBy("createdAt", "desc")), (snapshot) => {
+      setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      loaders.projects = false; checkLoading();
+    }, (error) => { console.error(error); loaders.projects = false; checkLoading(); });
+
+    const unsubClients = onSnapshot(query(collection(db, "clients"), orderBy("createdAt", "desc")), (snapshot) => {
+      setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      loaders.clients = false; checkLoading();
+    }, (error) => { console.error(error); loaders.clients = false; checkLoading(); });
+
+    return () => { unsubProjects(); unsubClients(); };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +73,7 @@ export default function ProjectsPage() {
       const saved = await res.json();
       if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
       invalidateApiCache(['/api/projects', '/api/dashboard/stats']);
-      setProjects(prev => editingEntity
-        ? prev.map(project => project.id === editingEntity.id ? { ...project, ...formData, updatedAt: new Date().toISOString() } : project)
-        : [{ ...saved, ...formData }, ...prev]
-      );
       resetForm();
-      void fetchData(true);
       toast.success(editingEntity ? 'Project updated successfully.' : 'Project created successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save project. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -89,8 +90,6 @@ export default function ProjectsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Delete failed');
       invalidateApiCache(['/api/projects', '/api/dashboard/stats']);
-      setProjects(prev => prev.filter(project => project.id !== id));
-      void fetchData(true);
       toast.success('Project deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete project. Please try again.'); }
   };
