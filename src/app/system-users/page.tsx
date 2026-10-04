@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { hasPermission } from '@/lib/auth/rbac';
 
 export default function SystemUsersPage() {
-  const { userData } = useAuth();
+  const { userData, loading: authLoading, user } = useAuth();
   const canManage = hasPermission(userData?.role, 'canManageSystemUsers');
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,8 +43,9 @@ export default function SystemUsersPage() {
   };
 
   useEffect(() => {
+    if (authLoading || !user) return;
     loadUsers();
-  }, []);
+  }, [authLoading, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
