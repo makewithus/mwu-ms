@@ -93,15 +93,15 @@ export default function SystemUsersPage() {
               )}
             </div>
 
-            <div className="card-elevated" style={{ padding: 0 }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 600 }}>
+            <div className="card-elevated" style={{ padding: 24 }}>
+              <div className="table-container">
+                <table>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-dark)' }}>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>User</th>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Email</th>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Role</th>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Status</th>
+                    <tr>
+                      <th>User</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -119,10 +119,10 @@ export default function SystemUsersPage() {
                       </tr>
                     ) : (
                       users.map((u) => (
-                        <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '16px 24px', fontWeight: 500 }}>{u.name}</td>
-                          <td style={{ padding: '16px 24px', color: 'var(--text-muted)' }}>{u.email}</td>
-                          <td style={{ padding: '16px 24px' }}>
+                        <tr key={u.id}>
+                          <td style={{ fontWeight: 500 }}>{u.name}</td>
+                          <td style={{ color: 'var(--text-muted)' }}>{u.email}</td>
+                          <td>
                             <div style={{ 
                               display: 'inline-block', 
                               padding: '4px 10px', 
@@ -136,8 +136,8 @@ export default function SystemUsersPage() {
                               {u.role.replace('_', ' ')}
                             </div>
                           </td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <span style={{ color: u.status === 'active' ? '#10B981' : 'var(--text-muted)' }}>
+                          <td>
+                            <span className={`badge ${u.status === 'active' ? 'badge-green' : 'badge-gray'}`}>
                               {u.status === 'active' ? 'Active' : 'Inactive'}
                             </span>
                           </td>
