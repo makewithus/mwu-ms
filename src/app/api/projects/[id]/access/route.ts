@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { requirePermission } from '@/lib/auth/server';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requirePermission(req, 'canManageProjects');
   if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 403 });

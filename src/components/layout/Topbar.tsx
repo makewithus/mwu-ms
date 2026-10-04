@@ -37,8 +37,9 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const handleSignOut = async () => {
+    await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
     await signOut(auth);
-    router.push('/login');
+    router.replace('/login');
   };
 
   const initials = getInitials(userData?.name, userData?.email);

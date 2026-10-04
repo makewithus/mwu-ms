@@ -4,6 +4,9 @@ import { requirePermission } from '@/lib/auth/server';
 import { verifyServiceToken } from '@/lib/auth/service';
 import type { Query, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 type IntegrationEventData = {
   eventType?: string;
   type?: string;

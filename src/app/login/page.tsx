@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { browserSessionPersistence, setPersistence, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Building2, Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
@@ -19,8 +19,23 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      await setPersistence(auth, browserSessionPersistence);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await credential.user.getIdToken();
+      const sessionRes = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      const sessionData = await sessionRes.json();
+
+      if (!sessionRes.ok) {
+        await signOut(auth);
+        throw new Error(sessionData.error || 'Unable to create secure admin session.');
+      }
+
+      const nextPath = new URLSearchParams(window.location.search).get('next');
+      router.replace(nextPath?.startsWith('/') ? nextPath : '/dashboard');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '';
       if (message.includes('invalid-credential') || message.includes('wrong-password') || message.includes('user-not-found')) {
