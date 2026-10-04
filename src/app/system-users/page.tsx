@@ -162,31 +162,31 @@ export default function SystemUsersPage() {
                 </button>
               </div>
               
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
-                  <input required type="text" className="input-field" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
+                  <input required type="text" className="input-base" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email Address</label>
-                  <input required type="email" className="input-field" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
+                  <input required type="email" className="input-base" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Password</label>
-                  <input required type="text" className="input-field" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-                  <p className="text-xs text-gray-500 mt-1">Make sure to securely share this with the user.</p>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Password</label>
+                  <input required type="text" className="input-base" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                  <p className="text-xs text-gray-500 mt-2">Make sure to securely share this with the user.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Role</label>
-                  <select required className="input-field" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Role</label>
+                  <select required className="input-base" style={{ background: 'var(--bg-primary)' }} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                     <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Administrator</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
                   </select>
                 </div>
-                <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-800">
-                  <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">Cancel</button>
-                  <button type="submit" disabled={isSubmitting} className="btn-primary">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                  <button type="button" onClick={() => setShowCreate(false)} className="btn btn-secondary" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)' }}>Cancel</button>
+                  <button type="submit" disabled={isSubmitting} className="btn btn-primary">
                     {isSubmitting ? 'Creating...' : 'Create User'}
                   </button>
                 </div>
