@@ -52,7 +52,12 @@ try {
   adminStorage = getStorage();
 } catch (error: any) {
   console.error("Firebase Admin SDK failed to initialize:", error.message);
-  const throwConfigError = () => { throw error; };
+  const throwConfigError = (target: any, prop: string | symbol) => {
+    if (prop === 'then' || prop === '__esModule' || typeof prop === 'symbol') {
+      return undefined;
+    }
+    throw error;
+  };
   adminDb = new Proxy({} as any, { get: throwConfigError });
   adminAuth = new Proxy({} as any, { get: throwConfigError });
   adminStorage = new Proxy({} as any, { get: throwConfigError });
