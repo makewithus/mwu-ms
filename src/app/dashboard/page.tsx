@@ -6,16 +6,20 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import { Activity, CheckCircle2, Clock3, DatabaseZap } from 'lucide-react';
+import { useAuth } from '@/lib/auth/auth-context';
 
 // Mock data removed. Will fetch real data inside the component.
 
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { loading: authLoading, user } = useAuth();
   const [data, setData] = useState<any>(() => getCachedApiData('/api/dashboard/stats'));
   const [loading, setLoading] = useState(() => !getCachedApiData('/api/dashboard/stats'));
 
   useEffect(() => {
+    if (authLoading || !user) return;
+    
     apiGet('/api/dashboard/stats')
       .then(d => {
         setData(d);
