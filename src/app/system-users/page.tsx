@@ -89,7 +89,7 @@ export default function SystemUsersPage() {
                 <p className="page-subtitle">Manage portal access for admins and managers.</p>
               </div>
               {canManage && (
-                <button onClick={() => setShowCreate(true)} className="btn-primary flex items-center gap-2">
+                <button onClick={() => setShowCreate(true)} className="btn btn-primary">
                   <Plus size={16} /> Add System User
                 </button>
               )}
@@ -158,40 +158,40 @@ export default function SystemUsersPage() {
 
         {/* Create Modal */}
         {showCreate && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="card w-full max-w-md" style={{ padding: 32 }}>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Add System User</h2>
-                <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-white transition-colors">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="card w-full" style={{ maxWidth: 500, padding: '40px 48px' }}>
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-2xl font-bold tracking-tight">Add System User</h2>
+                <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-full">
                   <X size={20} />
                 </button>
               </div>
               
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
-                  <input required type="text" className="input-base" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Name</label>
+                  <input required type="text" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Email Address</label>
-                  <input required type="email" className="input-base" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Email Address</label>
+                  <input required type="email" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Password</label>
-                  <input required type="text" className="input-base" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Password</label>
+                  <input required type="text" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
                   <p className="text-xs text-gray-500 mt-2">Make sure to securely share this with the user.</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Role</label>
-                  <select required className="input-base" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Role</label>
+                  <select required className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                     <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Administrator</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
                   </select>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                  <button type="button" onClick={() => setShowCreate(false)} className="btn btn-ghost">Cancel</button>
-                  <button type="submit" disabled={isSubmitting} className="btn btn-primary">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginTop: 12, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+                  <button type="button" onClick={() => setShowCreate(false)} className="btn btn-ghost" style={{ padding: '12px 24px' }}>Cancel</button>
+                  <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ padding: '12px 24px' }}>
                     {isSubmitting ? 'Creating...' : 'Create User'}
                   </button>
                 </div>
