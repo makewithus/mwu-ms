@@ -141,7 +141,6 @@ export default function AuditLogsPage() {
                 </table>
               </div>
             </div>
-              </div>
             </div>
           </main>
         </div>
