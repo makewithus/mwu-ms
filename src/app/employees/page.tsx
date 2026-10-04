@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase/client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -40,15 +42,15 @@ export default function EmployeesPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchEmployees = async (force = false) => {
-    if (employees.length === 0) setLoading(true);
-    try {
-      const data = await apiGet<{ employees?: any[] }>('/api/employees', { force });
-      setEmployees(data.employees || []);
-    } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
-  };
+  useEffect(() => {
+    setLoading(true);
+    const unsubEmployees = onSnapshot(query(collection(db, "employees"), orderBy("createdAt", "desc")), (snapshot) => {
+      setEmployees(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, (error) => { console.error(error); setLoading(false); });
 
-  useEffect(() => { fetchEmployees(); }, []);
+    return () => unsubEmployees();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,12 +62,7 @@ export default function EmployeesPage() {
       const saved = await res.json();
       if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
       invalidateApiCache(['/api/employees', '/api/dashboard/stats']);
-      setEmployees(prev => editingEntity
-        ? prev.map(employee => employee.id === editingEntity.id ? { ...employee, ...formData, updatedAt: new Date().toISOString() } : employee)
-        : [{ ...saved, ...formData }, ...prev]
-      );
       resetForm();
-      void fetchEmployees(true);
       toast.success(editingEntity ? 'Employee updated successfully.' : 'Employee added successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save employee. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -82,8 +79,6 @@ export default function EmployeesPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Delete failed');
       invalidateApiCache(['/api/employees', '/api/dashboard/stats']);
-      setEmployees(prev => prev.filter(employee => employee.id !== id));
-      void fetchEmployees(true);
       toast.success('Employee deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete employee. Please try again.'); }
   };
