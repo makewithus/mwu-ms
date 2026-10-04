@@ -1,0 +1,288 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper: is user authenticated? ──────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // ── Helper: get user data ─────────────────────────────────────────
+    function getUserData() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : null;
+    }
+
+    // ── Helper: safe role check ────────────────────────────────────────
+    function userRole() {
+      let data = getUserData();
+      return data != null ? data.role : null;
+    }
+
+    // ── Helper: get current user's employeeId from their profile ─────────
+    function currentEmployeeId() {
+      let data = getUserData();
+      return data != null ? data.employeeId : null;
+    }
+
+    // ── Role predicates ──────────────────────────────────────────────────
+    
+    // Super Admins across both systems
+    function isSuperAdmin() {
+      let r = userRole();
+      return isSignedIn() && (r == 'SUPER_ADMIN' || r == 'super_admin');
+    }
+
+    // Central Admins (includes SUPER_ADMIN and ADMIN)
+    function isCentralAdmin() {
+      let r = userRole();
+      return isSignedIn() && (r == 'SUPER_ADMIN' || r == 'ADMIN' || r == 'super_admin');
+    }
+
+    // Any Central Dashboard Access (Admins + Managers)
+    function hasCentralAccess() {
+      let r = userRole();
+      return isSignedIn() && (r == 'SUPER_ADMIN' || r == 'ADMIN' || r == 'MANAGER' || r == 'super_admin');
+    }
+
+    // EMS HR Admin
+    function isHRAdmin() {
+      let r = userRole();
+      return isSignedIn() && (r == 'hr_admin' || isSuperAdmin());
+    }
+
+    // CMS Admin
+    function isCmsAdmin() {
+      let r = userRole();
+      return isSignedIn() && (r == 'admin' || hasCentralAccess());
+    }
+
+    // CMS Developer
+    function isDeveloper() {
+      let r = userRole();
+      return isSignedIn() && r == 'developer';
+    }
+
+    // Client
+    function isClient() {
+      let r = userRole();
+      return isSignedIn() && (r == 'client' || r == 'CLIENT');
+    }
+
+
+    // =========================================================================
+    //                            SHARED COLLECTIONS
+    // =========================================================================
+
+    // ── /users ───────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Super admins and Central admins can read/write all
+      allow read, write: if isCentralAdmin() || isHRAdmin() || isCmsAdmin();
+      // Managers can read all users (for Central Admin dashboard)
+      allow read: if hasCentralAccess();
+      // Users can read/update their own profile
+      allow read, update: if isSignedIn() && request.auth.uid == userId;
+      // Users can create ONLY their own profile doc (self-registration)
+      allow create: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ── /clients (CMS & Central Admin) ───────────────────────────────────
+    match /clients/{clientId} {
+      allow read: if isCmsAdmin() || (isClient() && getUserData().clientId == clientId) || hasCentralAccess();
+      // Writing from frontend is blocked for clients, must use API
+      // But Central Admin / CMS Admins might use client SDK or Server Actions
+      allow write: if isCmsAdmin() || hasCentralAccess(); 
+    }
+
+    // ── /projects (CMS & Central Admin) ──────────────────────────────────
+    match /projects/{projectId} {
+      function isAssignedDeveloper() {
+        return isDeveloper() && request.auth.uid in resource.data.developerIds;
+      }
+      function isOwnClientProject() {
+        return isClient() && getUserData().clientId == resource.data.clientId;
+      }
+
+      allow read: if isCmsAdmin() || isAssignedDeveloper() || isOwnClientProject() || hasCentralAccess();
+      allow write: if isCmsAdmin() || hasCentralAccess(); // Developers use Server Actions/API
+
+      // Nested updates collection
+      match /updates/{updateId} {
+        function parentProject() {
+          return get(/databases/$(database)/documents/projects/$(projectId)).data;
+        }
+        function isAssignedDeveloperOnParent() {
+          return isDeveloper() && request.auth.uid in parentProject().developerIds;
+        }
+        function isOwnClientProjectOnParent() {
+          return isClient() && getUserData().clientId == parentProject().clientId;
+        }
+        allow read: if isCmsAdmin() || hasCentralAccess() || isAssignedDeveloperOnParent() || (isOwnClientProjectOnParent() && resource.data.visibility == 'client');
+        allow write: if false; // Use API
+      }
+
+      // Nested timeline collection
+      match /timeline/{timelineId} {
+        function parentProject() {
+          return get(/databases/$(database)/documents/projects/$(projectId)).data;
+        }
+        function isAssignedDeveloperOnParent() {
+          return isDeveloper() && request.auth.uid in parentProject().developerIds;
+        }
+        function isOwnClientProjectOnParent() {
+          return isClient() && getUserData().clientId == parentProject().clientId;
+        }
+        allow read: if isCmsAdmin() || hasCentralAccess() || isAssignedDeveloperOnParent() || isOwnClientProjectOnParent();
+        allow write: if false; // Use API
+      }
+    }
+
+    // ── /employees (EMS & Central Admin) ─────────────────────────────────
+    match /employees/{employeeId} {
+      allow read:   if isHRAdmin() || hasCentralAccess() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isHRAdmin() || hasCentralAccess();
+      allow update: if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && resource.data.uid == request.auth.uid
+            // Employees can update their profile, but cannot change these sensitive fields
+            && request.resource.data.get('salary', null) == resource.data.get('salary', null)
+            && request.resource.data.get('department', null) == resource.data.get('department', null)
+            && request.resource.data.get('designation', null) == resource.data.get('designation', null)
+            && request.resource.data.get('status', null) == resource.data.get('status', null)
+            && request.resource.data.get('employeeId', null) == resource.data.get('employeeId', null)
+            && request.resource.data.get('employmentType', null) == resource.data.get('employmentType', null));
+      allow delete: if isSuperAdmin() || isCentralAdmin();
+    }
+
+
+    // =========================================================================
+    //                            EMS COLLECTIONS
+    // =========================================================================
+
+    // ── /companies ───────────────────────────────────────────────────────
+    match /companies/{companyId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin() || isCentralAdmin();
+    }
+
+    // ── /departments ─────────────────────────────────────────────────────
+    match /departments/{deptId} {
+      allow read:  if isSignedIn();
+      allow write: if isHRAdmin() || hasCentralAccess();
+    }
+
+    // ── /attendance ──────────────────────────────────────────────────────
+    match /attendance/{attId} {
+      allow read:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.employeeId == currentEmployeeId());
+      allow create:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && request.resource.data.employeeId == currentEmployeeId());
+      allow update:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.employeeId == currentEmployeeId());
+    }
+
+    // ── /leaveRequests ───────────────────────────────────────────────────
+    match /leaveRequests/{leaveId} {
+      allow read:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && (
+              resource == null
+              || !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+              || resource.data.employeeId == currentEmployeeId()
+           ));
+      allow create:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && request.resource.data.employeeId == currentEmployeeId());
+      allow update:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.employeeId == currentEmployeeId() && resource.data.status == 'Pending');
+    }
+
+    // ── /leaveBalances ───────────────────────────────────────────────────
+    match /leaveBalances/{balanceId} {
+      allow read:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.employeeId == currentEmployeeId());
+      allow write: if isHRAdmin() || hasCentralAccess();
+    }
+
+    // ── /payroll ─────────────────────────────────────────────────────────
+    match /payroll/{payId} {
+      allow read:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.employeeId == currentEmployeeId());
+      allow write: if isHRAdmin() || hasCentralAccess();
+    }
+
+    // ── /payslips ────────────────────────────────────────────────────────
+    match /payslips/{slipId} {
+      allow read:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && resource.data.employeeId == currentEmployeeId());
+      allow write: if isHRAdmin() || hasCentralAccess();
+    }
+
+    // ── /documents ───────────────────────────────────────────────────────
+    match /documents/{docId} {
+      allow read:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && (
+              resource.data.visibility == 'Public'
+              || (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+                  && resource.data.employeeId == currentEmployeeId())
+           ));
+      allow write: if isHRAdmin() || hasCentralAccess();
+    }
+
+    // ── /folders ─────────────────────────────────────────────────────────
+    match /folders/{folderId} {
+      allow read:  if isSignedIn();
+      allow write: if isHRAdmin() || hasCentralAccess();
+    }
+
+    // ── /tasks ───────────────────────────────────────────────────────────
+    match /tasks/{taskId} {
+      allow read:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && (
+              resource.data.assignedTo == request.auth.uid
+              || resource.data.assigneeId == request.auth.uid
+           ));
+      allow create: if isHRAdmin() || hasCentralAccess();
+      allow update:
+        if isHRAdmin() || hasCentralAccess()
+        || (isSignedIn() && (
+              resource.data.assignedTo == request.auth.uid
+              || resource.data.assigneeId == request.auth.uid
+           ));
+    }
+
+    // ── /notices ─────────────────────────────────────────────────────────
+    match /notices/{noticeId} {
+      allow read:  if isSignedIn();
+      allow create, delete: if isHRAdmin() || hasCentralAccess();
+      allow update: if isHRAdmin() || hasCentralAccess() || (isSignedIn() && request.resource.data.title == resource.data.title && request.resource.data.description == resource.data.description);
+    }
+
+    // ── /notifications ───────────────────────────────────────────────────
+    match /notifications/{notifId} {
+      allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create:       if isSignedIn();
+    }
+
+    // ── /settings ────────────────────────────────────────────────────────
+    match /settings/{settingId} {
+      allow read:  if isSignedIn();
+      allow write: if isHRAdmin() || hasCentralAccess();
+    }
+
+    // ── /auditLogs ────────────────────────────────────────────────────
+    match /auditLogs/{logId} {
+      allow read:   if hasCentralAccess() || isCmsAdmin();
+      allow create: if isSignedIn();
+    }
+  }
+}
