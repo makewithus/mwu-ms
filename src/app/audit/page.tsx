@@ -52,16 +52,16 @@ export default function AuditLogsPage() {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} title="Audit Logs" />
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div className="card-elevated" style={{ padding: 0 }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
+            <div className="card-elevated" style={{ padding: 24 }}>
+              <div className="table-container">
+                <table>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-dark)' }}>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Timestamp</th>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Actor</th>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Action</th>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Entity</th>
-                      <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Details</th>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Actor</th>
+                      <th>Action</th>
+                      <th>Entity</th>
+                      <th>Details</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -79,16 +79,16 @@ export default function AuditLogsPage() {
                       </tr>
                     ) : (
                       logs.map((log) => (
-                        <tr key={log.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}>
-                          <td style={{ padding: '16px 24px', whiteSpace: 'nowrap' }}>
+                        <tr key={log.id}>
+                          <td>
                             <div style={{ fontWeight: 500 }}>{formatDate(log.timestamp)}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{log.module || log.actorRole || 'System'}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{log.module || log.actorRole || 'System'}</div>
                           </td>
-                          <td style={{ padding: '16px 24px' }}>
+                          <td>
                             <div style={{ fontWeight: 500 }}>{log.actorName || log.actorEmail || 'Unknown'}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{log.actorId}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{log.actorId}</div>
                           </td>
-                          <td style={{ padding: '16px 24px' }}>
+                          <td>
                             <div style={{ 
                               display: 'inline-block', 
                               padding: '4px 10px', 
@@ -101,12 +101,12 @@ export default function AuditLogsPage() {
                               {String(log.action).replace(/_/g, ' ')}
                             </div>
                           </td>
-                          <td style={{ padding: '16px 24px' }}>
+                          <td>
                             <div style={{ fontWeight: 500 }}>{log.entityType || '-'}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>{log.entityId || '-'}</div>
+                            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace', marginTop: 4 }}>{log.entityId || '-'}</div>
                           </td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ maxWidth: 300, whiteSpace: 'normal', fontSize: 13 }}>
+                          <td>
+                            <div style={{ maxWidth: 300, whiteSpace: 'normal', fontSize: 13, color: 'var(--text-secondary)' }}>
                               {log.description || '-'}
                             </div>
                           </td>
