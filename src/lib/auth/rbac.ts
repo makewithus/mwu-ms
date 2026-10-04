@@ -1,17 +1,8 @@
-export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'CLIENT';
+export type Role = 'SUPER_ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'CLIENT';
 type StoredRole = Role | string | null | undefined;
 
 export const RolePermissions = {
   SUPER_ADMIN: {
-    canManageEmployees: true,
-    canManageClients: true,
-    canManageProjects: true,
-    canViewAllProjects: true,
-    canManageInvoices: true,
-    canManageIntegrations: true,
-    canManageSystemUsers: true,
-  },
-  ADMIN: {
     canManageEmployees: true,
     canManageClients: true,
     canManageProjects: true,

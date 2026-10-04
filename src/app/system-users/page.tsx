@@ -178,7 +178,6 @@ export default function SystemUsersPage() {
                     <select className="input-base w-full" style={{ height: 44 }} value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
                       <option value="ALL">All Roles</option>
                       <option value="SUPER_ADMIN">Super Admin</option>
-                      <option value="ADMIN">Administrator</option>
                       <option value="MANAGER">Manager</option>
                     </select>
                   </div>
@@ -298,7 +297,6 @@ export default function SystemUsersPage() {
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Role</label>
                   <select required className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                     <option value="MANAGER">Manager</option>
-                    <option value="ADMIN">Administrator</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
                   </select>
                 </div>

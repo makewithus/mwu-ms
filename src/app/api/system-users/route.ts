@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const snap = await adminDb.collection('users')
-      .where('role', 'in', ['SUPER_ADMIN', 'ADMIN', 'MANAGER'])
+      .where('role', 'in', ['SUPER_ADMIN', 'MANAGER'])
       .get();
       
     const users = snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (!['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(data.role)) {
+    if (!['SUPER_ADMIN', 'MANAGER'].includes(data.role)) {
       return NextResponse.json({ error: "Invalid role for system user" }, { status: 400 });
     }
 
