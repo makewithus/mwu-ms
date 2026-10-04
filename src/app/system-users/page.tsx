@@ -72,10 +72,10 @@ export default function SystemUsersPage() {
 
   return (
     <ProtectedRoute requiredPermission="canManageSystemUsers">
-      <div className="flex h-screen bg-bg">
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
         <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} title="System Users" />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Topbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
           
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-8">
