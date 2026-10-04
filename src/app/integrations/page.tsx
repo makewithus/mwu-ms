@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
+import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -22,8 +22,8 @@ const formatDate = (dateObj: any) => {
 export default function IntegrationsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<any[]>(() => getCachedApiData<{ events?: any[] }>('/api/integrations/events')?.events || []);
+  const [loading, setLoading] = useState(() => !getCachedApiData('/api/integrations/events'));
   
   const [showCreate, setShowCreate] = useState(false);
   const [editingEntity, setEditingEntity] = useState<any>(null);
@@ -40,11 +40,10 @@ export default function IntegrationsPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchEvents = async () => {
-    setLoading(true);
+  const fetchEvents = async (force = false) => {
+    if (events.length === 0) setLoading(true);
     try {
-      const res = await fetchWithAuth('/api/integrations/events');
-      const data = await parseApiResponse<{ events?: any[] }>(res);
+      const data = await apiGet<{ events?: any[] }>('/api/integrations/events', { force });
       setEvents(data.events || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
   };
@@ -59,9 +58,15 @@ export default function IntegrationsPage() {
       const url = editingEntity ? `/api/integrations/events/${editingEntity.id}` : '/api/integrations/events';
       const method = editingEntity ? 'PUT' : 'POST';
       const res = await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      if (!res.ok) throw new Error(editingEntity ? 'Update failed' : 'Creation failed');
+      const saved = await res.json();
+      if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
+      invalidateApiCache(['/api/integrations/events', '/api/dashboard/stats']);
+      setEvents(prev => editingEntity
+        ? prev.map(event => event.id === editingEntity.id ? { ...event, ...formData, updatedAt: new Date().toISOString() } : event)
+        : [{ ...saved, ...formData }, ...prev]
+      );
       resetForm();
-      await fetchEvents();
+      void fetchEvents(true);
       toast.success(editingEntity ? 'Event updated successfully.' : 'Integration event created successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save event. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -75,8 +80,11 @@ export default function IntegrationsPage() {
     }))) return;
     try {
       const res = await fetchWithAuth(`/api/integrations/events/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      await fetchEvents();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      invalidateApiCache(['/api/integrations/events', '/api/dashboard/stats']);
+      setEvents(prev => prev.filter(event => event.id !== id));
+      void fetchEvents(true);
       toast.success('Event deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete event. Please try again.'); }
   };
@@ -84,8 +92,11 @@ export default function IntegrationsPage() {
   const handleRetry = async (eventId: string) => {
     try {
       const res = await fetchWithAuth(`/api/integrations/events/${eventId}/retry`, { method: 'POST' });
-      if (!res.ok) throw new Error('Retry failed');
-      await fetchEvents();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Retry failed');
+      invalidateApiCache(['/api/integrations/events', '/api/dashboard/stats']);
+      setEvents(prev => prev.map(event => event.id === eventId ? { ...event, status: 'PENDING', retryCount: (event.retryCount || 0) + 1 } : event));
+      void fetchEvents(true);
       toast.success('Event queued for retry successfully.');
     } catch (err: any) { toast.error(err.message || 'Operation failed'); }
   };

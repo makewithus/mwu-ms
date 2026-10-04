@@ -6,6 +6,7 @@ import { Bell, ChevronDown, LogOut, Menu, Search, User } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { invalidateApiCache } from '@/lib/api-client';
 
 interface TopbarProps {
   onMenuToggle: () => void;
@@ -38,6 +39,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
 
   const handleSignOut = async () => {
     await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+    invalidateApiCache();
     await signOut(auth);
     router.replace('/login');
   };

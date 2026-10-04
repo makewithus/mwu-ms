@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
+import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -22,9 +22,9 @@ const formatDate = (dateObj: any) => {
 export default function ProjectsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>(() => getCachedApiData<{ projects?: any[] }>('/api/projects')?.projects || []);
+  const [clients, setClients] = useState<any[]>(() => getCachedApiData<{ clients?: any[] }>('/api/clients')?.clients || []);
+  const [loading, setLoading] = useState(() => !getCachedApiData('/api/projects'));
   
   const [showCreate, setShowCreate] = useState(false);
   const [editingEntity, setEditingEntity] = useState<any>(null);
@@ -42,15 +42,13 @@ export default function ProjectsPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (force = false) => {
+    if (projects.length === 0) setLoading(true);
     try {
-      const [projRes, clientsRes] = await Promise.all([
-        fetchWithAuth('/api/projects'),
-        fetchWithAuth('/api/clients')
+      const [projData, clientsData] = await Promise.all([
+        apiGet<{ projects?: any[] }>('/api/projects', { force }),
+        apiGet<{ clients?: any[] }>('/api/clients', { force })
       ]);
-      const projData = await parseApiResponse<{ projects?: any[] }>(projRes);
-      const clientsData = await parseApiResponse<{ clients?: any[] }>(clientsRes);
       setProjects(projData.projects || []);
       setClients(clientsData.clients || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
@@ -66,9 +64,15 @@ export default function ProjectsPage() {
       const url = editingEntity ? `/api/projects/${editingEntity.id}` : '/api/projects';
       const method = editingEntity ? 'PUT' : 'POST';
       const res = await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      if (!res.ok) throw new Error(editingEntity ? 'Update failed' : 'Creation failed');
+      const saved = await res.json();
+      if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
+      invalidateApiCache(['/api/projects', '/api/dashboard/stats']);
+      setProjects(prev => editingEntity
+        ? prev.map(project => project.id === editingEntity.id ? { ...project, ...formData, updatedAt: new Date().toISOString() } : project)
+        : [{ ...saved, ...formData }, ...prev]
+      );
       resetForm();
-      await fetchData();
+      void fetchData(true);
       toast.success(editingEntity ? 'Project updated successfully.' : 'Project created successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save project. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -82,8 +86,11 @@ export default function ProjectsPage() {
     }))) return;
     try {
       const res = await fetchWithAuth(`/api/projects/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      await fetchData();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      invalidateApiCache(['/api/projects', '/api/dashboard/stats']);
+      setProjects(prev => prev.filter(project => project.id !== id));
+      void fetchData(true);
       toast.success('Project deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete project. Please try again.'); }
   };

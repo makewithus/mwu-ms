@@ -6,6 +6,7 @@ import { auth, db } from '../firebase/client';
 import { doc, getDoc } from 'firebase/firestore';
 import { normalizeRole } from './rbac';
 import { ADMIN_IDLE_TIMEOUT_MS } from './session';
+import { invalidateApiCache, prefetchApi } from '../api-client';
 
 interface UserData {
   uid: string;
@@ -73,6 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const clearAdminSession = async () => {
       await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+      invalidateApiCache();
       await signOut(auth);
       window.location.assign('/login');
     };
@@ -90,6 +92,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       events.forEach((event) => window.removeEventListener(event, resetTimer));
     };
   }, [user]);
+
+  useEffect(() => {
+    const role = normalizeRole(userData?.role);
+    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') return;
+
+    prefetchApi([
+      '/api/dashboard/stats',
+      '/api/clients',
+      '/api/employees',
+      '/api/projects',
+      '/api/invoices',
+      '/api/integrations/events',
+    ]);
+  }, [userData?.role]);
 
   return (
     <AuthContext.Provider value={{ user, userData, loading }}>

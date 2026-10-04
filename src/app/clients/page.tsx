@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
+import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -22,8 +22,8 @@ const formatDate = (dateObj: any) => {
 export default function ClientsPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [clients, setClients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [clients, setClients] = useState<any[]>(() => getCachedApiData<{ clients?: any[] }>('/api/clients')?.clients || []);
+  const [loading, setLoading] = useState(() => !getCachedApiData('/api/clients'));
   
   const [showCreate, setShowCreate] = useState(false);
   const [editingEntity, setEditingEntity] = useState<any>(null);
@@ -40,11 +40,10 @@ export default function ClientsPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchClients = async () => {
-    setLoading(true);
+  const fetchClients = async (force = false) => {
+    if (clients.length === 0) setLoading(true);
     try {
-      const res = await fetchWithAuth('/api/clients');
-      const data = await parseApiResponse<{ clients?: any[] }>(res);
+      const data = await apiGet<{ clients?: any[] }>('/api/clients', { force });
       setClients(data.clients || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
   };
@@ -58,9 +57,15 @@ export default function ClientsPage() {
       const url = editingEntity ? `/api/clients/${editingEntity.id}` : '/api/clients';
       const method = editingEntity ? 'PUT' : 'POST';
       const res = await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      if (!res.ok) throw new Error(editingEntity ? 'Update failed' : 'Creation failed');
+      const saved = await res.json();
+      if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
+      invalidateApiCache(['/api/clients', '/api/dashboard/stats']);
+      setClients(prev => editingEntity
+        ? prev.map(client => client.id === editingEntity.id ? { ...client, ...formData, updatedAt: new Date().toISOString() } : client)
+        : [{ ...saved, ...formData }, ...prev]
+      );
       resetForm();
-      await fetchClients();
+      void fetchClients(true);
       toast.success(editingEntity ? 'Client updated successfully.' : 'Client added successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save client. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -74,8 +79,11 @@ export default function ClientsPage() {
     }))) return;
     try {
       const res = await fetchWithAuth(`/api/clients/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      await fetchClients();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      invalidateApiCache(['/api/clients', '/api/dashboard/stats']);
+      setClients(prev => prev.filter(client => client.id !== id));
+      void fetchClients(true);
       toast.success('Client deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete client. Please try again.'); }
   };

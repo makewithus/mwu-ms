@@ -10,16 +10,13 @@ export async function GET(req: NextRequest) {
   if (!auth.authorized) return NextResponse.json({ error: auth.error }, { status: 403 });
 
   try {
-    const clientsSnap = await adminDb.collection('clients').count().get();
-    const employeesSnap = await adminDb.collection('employees').count().get();
-    const projectsSnap = await adminDb.collection('projects').count().get();
-    const integrationsSnap = await adminDb.collection('integrationEvents').where('status', '==', 'PENDING').count().get();
-
-    // Recent activity (e.g. audit logs)
-    const activitySnap = await adminDb.collection('auditLogs')
-      .orderBy('timestamp', 'desc')
-      .limit(4)
-      .get();
+    const [clientsSnap, employeesSnap, projectsSnap, integrationsSnap, activitySnap] = await Promise.all([
+      adminDb.collection('clients').count().get(),
+      adminDb.collection('employees').count().get(),
+      adminDb.collection('projects').count().get(),
+      adminDb.collection('integrationEvents').where('status', '==', 'PENDING').count().get(),
+      adminDb.collection('auditLogs').orderBy('timestamp', 'desc').limit(4).get(),
+    ]);
       
     const activity = activitySnap.docs.map(doc => {
       const data = doc.data();

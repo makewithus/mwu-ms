@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
+import { apiGet, getCachedApiData } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -12,12 +12,11 @@ import { Activity, CheckCircle2, Clock3, DatabaseZap } from 'lucide-react';
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(() => getCachedApiData('/api/dashboard/stats'));
+  const [loading, setLoading] = useState(() => !getCachedApiData('/api/dashboard/stats'));
 
   useEffect(() => {
-    fetchWithAuth('/api/dashboard/stats')
-      .then(parseApiResponse)
+    apiGet('/api/dashboard/stats')
       .then(d => {
         setData(d);
         setLoading(false);

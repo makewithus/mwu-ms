@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
+import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -22,8 +22,8 @@ const formatDate = (dateObj: any) => {
 export default function EmployeesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [employees, setEmployees] = useState<any[]>(() => getCachedApiData<{ employees?: any[] }>('/api/employees')?.employees || []);
+  const [loading, setLoading] = useState(() => !getCachedApiData('/api/employees'));
   
   const [showCreate, setShowCreate] = useState(false);
   const [editingEntity, setEditingEntity] = useState<any>(null);
@@ -40,11 +40,10 @@ export default function EmployeesPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchEmployees = async () => {
-    setLoading(true);
+  const fetchEmployees = async (force = false) => {
+    if (employees.length === 0) setLoading(true);
     try {
-      const res = await fetchWithAuth('/api/employees');
-      const data = await parseApiResponse<{ employees?: any[] }>(res);
+      const data = await apiGet<{ employees?: any[] }>('/api/employees', { force });
       setEmployees(data.employees || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
   };
@@ -58,9 +57,15 @@ export default function EmployeesPage() {
       const url = editingEntity ? `/api/employees/${editingEntity.id}` : '/api/employees';
       const method = editingEntity ? 'PUT' : 'POST';
       const res = await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      if (!res.ok) throw new Error(editingEntity ? 'Update failed' : 'Creation failed');
+      const saved = await res.json();
+      if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
+      invalidateApiCache(['/api/employees', '/api/dashboard/stats']);
+      setEmployees(prev => editingEntity
+        ? prev.map(employee => employee.id === editingEntity.id ? { ...employee, ...formData, updatedAt: new Date().toISOString() } : employee)
+        : [{ ...saved, ...formData }, ...prev]
+      );
       resetForm();
-      await fetchEmployees();
+      void fetchEmployees(true);
       toast.success(editingEntity ? 'Employee updated successfully.' : 'Employee added successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save employee. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -74,8 +79,11 @@ export default function EmployeesPage() {
     }))) return;
     try {
       const res = await fetchWithAuth(`/api/employees/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      await fetchEmployees();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      invalidateApiCache(['/api/employees', '/api/dashboard/stats']);
+      setEmployees(prev => prev.filter(employee => employee.id !== id));
+      void fetchEmployees(true);
       toast.success('Employee deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete employee. Please try again.'); }
   };

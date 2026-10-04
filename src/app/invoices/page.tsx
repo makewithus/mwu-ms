@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
+import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -22,8 +22,8 @@ const formatDate = (dateObj: any) => {
 export default function InvoicesPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [invoices, setInvoices] = useState<any[]>(() => getCachedApiData<{ invoices?: any[] }>('/api/invoices')?.invoices || []);
+  const [loading, setLoading] = useState(() => !getCachedApiData('/api/invoices'));
   
   const [showCreate, setShowCreate] = useState(false);
   const [editingEntity, setEditingEntity] = useState<any>(null);
@@ -40,11 +40,10 @@ export default function InvoicesPage() {
     return () => mq.removeEventListener('change', handle);
   }, []);
 
-  const fetchInvoices = async () => {
-    setLoading(true);
+  const fetchInvoices = async (force = false) => {
+    if (invoices.length === 0) setLoading(true);
     try {
-      const res = await fetchWithAuth('/api/invoices');
-      const data = await parseApiResponse<{ invoices?: any[] }>(res);
+      const data = await apiGet<{ invoices?: any[] }>('/api/invoices', { force });
       setInvoices(data.invoices || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
   };
@@ -59,9 +58,15 @@ export default function InvoicesPage() {
       const url = editingEntity ? `/api/invoices/${editingEntity.id}` : '/api/invoices';
       const method = editingEntity ? 'PUT' : 'POST';
       const res = await fetchWithAuth(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
-      if (!res.ok) throw new Error(editingEntity ? 'Update failed' : 'Creation failed');
+      const saved = await res.json();
+      if (!res.ok) throw new Error(saved.error || (editingEntity ? 'Update failed' : 'Creation failed'));
+      invalidateApiCache(['/api/invoices', '/api/dashboard/stats', '/api/integrations/events']);
+      setInvoices(prev => editingEntity
+        ? prev.map(invoice => invoice.id === editingEntity.id ? { ...invoice, ...formData, updatedAt: new Date().toISOString() } : invoice)
+        : [{ ...saved, ...formData }, ...prev]
+      );
       resetForm();
-      await fetchInvoices();
+      void fetchInvoices(true);
       toast.success(editingEntity ? 'Invoice updated successfully.' : 'Invoice created successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to save invoice. Please try again.'); } finally { setIsSubmitting(false); }
   };
@@ -75,8 +80,11 @@ export default function InvoicesPage() {
     }))) return;
     try {
       const res = await fetchWithAuth(`/api/invoices/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Delete failed');
-      await fetchInvoices();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+      invalidateApiCache(['/api/invoices', '/api/dashboard/stats']);
+      setInvoices(prev => prev.filter(invoice => invoice.id !== id));
+      void fetchInvoices(true);
       toast.success('Invoice deleted successfully.');
     } catch (err: any) { toast.error(err.message || 'Failed to delete invoice. Please try again.'); }
   };
