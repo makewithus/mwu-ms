@@ -17,7 +17,11 @@ export default function ProtectedRoute({ children, requiredPermission }: Protect
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push('/login');
+        // If Firebase Auth is logged out but we are in a protected route,
+        // the Next.js session cookie might be stale. Clear it to break redirect loops.
+        fetch('/api/auth/session', { method: 'DELETE' }).finally(() => {
+          router.push('/login');
+        });
       } else if (requiredPermission && userData) {
         const hasAccess = hasPermission(userData.role as Role, requiredPermission);
         if (!hasAccess) {
