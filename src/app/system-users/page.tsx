@@ -141,8 +141,8 @@ export default function SystemUsersPage() {
                             </div>
                           </td>
                           <td style={{ padding: '16px 24px' }}>
-                            <span className={`badge ${u.status?.toLowerCase() === 'active' ? 'badge-green' : 'badge-gray'}`}>
-                              {u.status?.toLowerCase() === 'active' ? 'Active' : 'Inactive'}
+                            <span className={`badge ${(u.status || 'active').toLowerCase() === 'active' ? 'badge-green' : 'badge-gray'}`}>
+                              {(u.status || 'active').toLowerCase() === 'active' ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                         </tr>
