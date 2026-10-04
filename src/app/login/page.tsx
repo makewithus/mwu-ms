@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { browserSessionPersistence, setPersistence, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Building2, Eye, EyeOff, Loader2, ShieldCheck } from 'lucide-react';
@@ -19,7 +19,6 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await setPersistence(auth, browserSessionPersistence);
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await credential.user.getIdToken();
       const sessionRes = await fetch('/api/auth/session', {
