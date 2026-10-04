@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth } from '@/lib/api-client';
+import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -44,7 +44,7 @@ export default function IntegrationsPage() {
     setLoading(true);
     try {
       const res = await fetchWithAuth('/api/integrations/events');
-      const data = await res.json();
+      const data = await parseApiResponse<{ events?: any[] }>(res);
       setEvents(data.events || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
   };

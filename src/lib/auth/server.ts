@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { adminAuth, adminDb } from '../firebase/admin';
-import { Role, hasPermission } from './rbac';
+import { Role, hasPermission, normalizeRole } from './rbac';
 
 export async function verifyApiRequest(req: NextRequest): Promise<{ authorized: false; error: string } | { authorized: true; uid: string; role: Role; email?: string }> {
   try {
@@ -26,10 +26,15 @@ export async function verifyApiRequest(req: NextRequest): Promise<{ authorized: 
     }
 
     const userData = userDoc.data();
+    const role = normalizeRole(userData?.role);
+    if (!role) {
+      return { authorized: false, error: 'Unauthorized: Invalid role' };
+    }
+
     return { 
       authorized: true, 
       uid: decodedToken.uid,
-      role: userData?.role as Role,
+      role,
       email: decodedToken.email
     };
   } catch (error) {

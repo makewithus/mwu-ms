@@ -18,15 +18,22 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   });
 
   // Provide a safe wrapper around response.json()
-  const originalJson = response.json.bind(response);
   response.json = async () => {
     try {
       const text = await response.text();
       return text ? JSON.parse(text) : {};
-    } catch (e) {
+    } catch {
       return { error: 'Invalid JSON response from server' };
     }
   };
 
   return response;
+}
+
+export async function parseApiResponse<T>(response: Response): Promise<T> {
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error || `Request failed with status ${response.status}`);
+  }
+  return data as T;
 }

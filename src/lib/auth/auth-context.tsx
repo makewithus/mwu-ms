@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase/client';
 import { doc, getDoc } from 'firebase/firestore';
+import { normalizeRole } from './rbac';
 
 interface UserData {
   uid: string;
@@ -37,7 +38,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           if (userDoc.exists()) {
-            setUserData(userDoc.data() as UserData);
+            const data = userDoc.data() as UserData;
+            setUserData({
+              ...data,
+              uid: firebaseUser.uid,
+              email: data.email ?? firebaseUser.email,
+              role: normalizeRole(data.role) ?? 'EMPLOYEE',
+            });
           } else {
             setUserData({
               uid: firebaseUser.uid,

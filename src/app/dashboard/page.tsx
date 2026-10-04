@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchWithAuth } from '@/lib/api-client';
+import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchWithAuth('/api/dashboard/stats')
-      .then(res => res.json())
+      .then(parseApiResponse)
       .then(d => {
         setData(d);
         setLoading(false);

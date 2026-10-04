@@ -1,4 +1,5 @@
 export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE' | 'CLIENT';
+type StoredRole = Role | string | null | undefined;
 
 export const RolePermissions = {
   SUPER_ADMIN: {
@@ -35,7 +36,18 @@ export const RolePermissions = {
   }
 };
 
-export function hasPermission(role: Role, permission: keyof typeof RolePermissions.SUPER_ADMIN): boolean {
-  if (!role || !RolePermissions[role]) return false;
-  return RolePermissions[role][permission] ?? false;
+export function normalizeRole(role: StoredRole): Role | null {
+  if (!role) return null;
+
+  const normalized = String(role).trim().toUpperCase().replace(/[\s-]+/g, '_');
+  if (normalized === 'SUPERADMIN') return 'SUPER_ADMIN';
+  if (normalized in RolePermissions) return normalized as Role;
+
+  return null;
+}
+
+export function hasPermission(role: StoredRole, permission: keyof typeof RolePermissions.SUPER_ADMIN): boolean {
+  const normalizedRole = normalizeRole(role);
+  if (!normalizedRole) return false;
+  return RolePermissions[normalizedRole][permission] ?? false;
 }

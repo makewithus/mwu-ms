@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth } from '@/lib/api-client';
+import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -44,7 +44,7 @@ export default function ClientsPage() {
     setLoading(true);
     try {
       const res = await fetchWithAuth('/api/clients');
-      const data = await res.json();
+      const data = await parseApiResponse<{ clients?: any[] }>(res);
       setClients(data.clients || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
   };

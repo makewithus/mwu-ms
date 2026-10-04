@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchWithAuth } from '@/lib/api-client';
+import { fetchWithAuth, parseApiResponse } from '@/lib/api-client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
@@ -49,8 +49,8 @@ export default function ProjectsPage() {
         fetchWithAuth('/api/projects'),
         fetchWithAuth('/api/clients')
       ]);
-      const projData = await projRes.json();
-      const clientsData = await clientsRes.json();
+      const projData = await parseApiResponse<{ projects?: any[] }>(projRes);
+      const clientsData = await parseApiResponse<{ clients?: any[] }>(clientsRes);
       setProjects(projData.projects || []);
       setClients(clientsData.clients || []);
     } catch (err: any) { toast.error(err.message || 'Operation failed'); } finally { setLoading(false); }
