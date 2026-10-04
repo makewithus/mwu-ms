@@ -154,7 +154,7 @@ export default function SystemUsersPage() {
         {/* Create Modal */}
         {showCreate && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="card-elevated w-full max-w-md" style={{ padding: 32 }}>
+            <div className="card w-full max-w-md" style={{ padding: 32 }}>
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">Add System User</h2>
                 <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-white transition-colors">
@@ -178,14 +178,14 @@ export default function SystemUsersPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Role</label>
-                  <select required className="input-base" style={{ background: 'var(--bg-primary)' }} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
+                  <select required className="input-base" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                     <option value="MANAGER">Manager</option>
                     <option value="ADMIN">Administrator</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                  <button type="button" onClick={() => setShowCreate(false)} className="btn btn-secondary" style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)' }}>Cancel</button>
+                  <button type="button" onClick={() => setShowCreate(false)} className="btn btn-ghost">Cancel</button>
                   <button type="submit" disabled={isSubmitting} className="btn btn-primary">
                     {isSubmitting ? 'Creating...' : 'Create User'}
                   </button>
