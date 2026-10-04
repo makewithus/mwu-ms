@@ -1,4 +1,4 @@
-export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE' | 'CLIENT';
+export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'CLIENT';
 type StoredRole = Role | string | null | undefined;
 
 export const RolePermissions = {
@@ -9,6 +9,7 @@ export const RolePermissions = {
     canViewAllProjects: true,
     canManageInvoices: true,
     canManageIntegrations: true,
+    canManageSystemUsers: true,
   },
   ADMIN: {
     canManageEmployees: true,
@@ -17,6 +18,16 @@ export const RolePermissions = {
     canViewAllProjects: true,
     canManageInvoices: true,
     canManageIntegrations: true,
+    canManageSystemUsers: true,
+  },
+  MANAGER: {
+    canManageEmployees: true,
+    canManageClients: true,
+    canManageProjects: true,
+    canViewAllProjects: true,
+    canManageInvoices: true,
+    canManageIntegrations: true,
+    canManageSystemUsers: false,
   },
   EMPLOYEE: {
     canManageEmployees: false,
@@ -25,6 +36,7 @@ export const RolePermissions = {
     canViewAllProjects: false,
     canManageInvoices: false,
     canManageIntegrations: false,
+    canManageSystemUsers: false,
   },
   CLIENT: {
     canManageEmployees: false,
@@ -33,6 +45,7 @@ export const RolePermissions = {
     canViewAllProjects: false,
     canManageInvoices: false,
     canManageIntegrations: false,
+    canManageSystemUsers: false,
   }
 };
 

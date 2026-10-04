@@ -11,7 +11,11 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Users,
+  Settings,
+  FileText,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth/auth-context';
+import { hasPermission } from '@/lib/auth/rbac';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,6 +24,8 @@ const NAV = [
   { href: '/projects', label: 'Projects', icon: ClipboardList },
   { href: '/invoices', label: 'Invoices', icon: DollarSign },
   { href: '/integrations', label: 'Integrations', icon: BarChart3 },
+  { href: '/audit', label: 'Audit Logs', icon: FileText },
+  { href: '/system-users', label: 'System Users', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -29,6 +35,13 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { userData } = useAuth();
+
+  const showSystemUsers = hasPermission(userData?.role, 'canManageSystemUsers');
+  const visibleNav = NAV.filter(item => {
+    if (item.href === '/system-users') return showSystemUsers;
+    return true;
+  });
 
   const linkStyle = (active: boolean) => ({
     display: 'flex',
@@ -82,7 +95,7 @@ export default function Sidebar({ open, onToggle }: SidebarProps) {
       </div>
 
       <nav style={{ flex: 1, padding: '32px 16px', overflowY: 'auto', overflowX: 'hidden' }}>
-        {NAV.map(({ href, label, icon: Icon }) => {
+        {visibleNav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (pathname.startsWith(href) && href !== '/dashboard');
           return (
             <Link
