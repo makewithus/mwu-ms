@@ -104,6 +104,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       '/api/projects',
       '/api/invoices',
       '/api/integrations/events',
+      '/api/system-users',
+      '/api/audit',
     ]);
   }, [userData?.role]);
 
