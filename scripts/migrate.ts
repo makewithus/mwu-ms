@@ -31,7 +31,7 @@ const emsApp = initializeApp({
 
 const cmsApp = initializeApp({
   credential: cert(cmsCreds),
-  projectId: 'mwus-556a1'
+  projectId: 'mwu-ms'
 }, 'cms-legacy');
 
 const centralApp = initializeApp({
