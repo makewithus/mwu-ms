@@ -7,7 +7,7 @@ import { Role, hasPermission } from '@/lib/auth/rbac';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredPermission?: 'canManageEmployees' | 'canManageClients' | 'canManageProjects' | 'canViewAllProjects' | 'canManageInvoices' | 'canManageIntegrations';
+  requiredPermission?: 'canManageEmployees' | 'canManageClients' | 'canManageProjects' | 'canViewAllProjects' | 'canManageInvoices' | 'canManageIntegrations' | 'canManageSystemUsers';
 }
 
 export default function ProtectedRoute({ children, requiredPermission }: ProtectedRouteProps) {
