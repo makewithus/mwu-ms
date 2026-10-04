@@ -22,6 +22,7 @@ export default function AuditLogsPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userMap, setUserMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
@@ -31,7 +32,16 @@ export default function AuditLogsPage() {
   }, []);
 
   useEffect(() => {
-    const unsub = onSnapshot(
+    // Fetch users for resolving actor names
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
+      const map: Record<string, any> = {};
+      snapshot.forEach(doc => {
+        map[doc.id] = doc.data();
+      });
+      setUserMap(map);
+    });
+
+    const unsubLogs = onSnapshot(
       query(collection(db, "auditLogs"), orderBy("timestamp", "desc"), limit(200)),
       (snapshot) => {
         setLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -42,16 +52,28 @@ export default function AuditLogsPage() {
         setLoading(false);
       }
     );
-    return () => unsub();
+    return () => {
+      unsubLogs();
+      unsubUsers();
+    };
   }, []);
 
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-bg">
         <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} title="Audit Logs" />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Topbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+          <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            <div className="page-container">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title flex items-center gap-2">
+                    Audit Logs
+                  </h1>
+                  <p className="page-subtitle">Track all cross-platform activities in real time.</p>
+                </div>
+              </div>
             <div className="card-elevated" style={{ padding: 24 }}>
               <div className="table-container">
                 <table>
@@ -85,7 +107,9 @@ export default function AuditLogsPage() {
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{log.module || log.actorRole || 'System'}</div>
                           </td>
                           <td>
-                            <div style={{ fontWeight: 500 }}>{log.actorName || log.actorEmail || 'Unknown'}</div>
+                            <div style={{ fontWeight: 500 }}>
+                              {log.actorName || (userMap[log.actorId]?.firstName && userMap[log.actorId]?.lastName ? `${userMap[log.actorId]?.firstName} ${userMap[log.actorId]?.lastName}` : (userMap[log.actorId]?.name || userMap[log.actorId]?.email || log.actorEmail || 'Unknown'))}
+                            </div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{log.actorId}</div>
                           </td>
                           <td>
@@ -115,6 +139,8 @@ export default function AuditLogsPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
               </div>
             </div>
           </main>

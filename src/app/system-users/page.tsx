@@ -78,9 +78,10 @@ export default function SystemUsersPage() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <Topbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
           
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mb-8">
-              <div>
+          <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+            <div className="page-container">
+              <div className="page-header">
+                <div>
                 <h1 className="page-title flex items-center gap-2">
                   <Settings size={24} className="text-brand-red" />
                   System Administrators
@@ -149,6 +150,8 @@ export default function SystemUsersPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
               </div>
             </div>
           </main>
