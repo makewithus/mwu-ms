@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
     const role = normalizeRole(userDoc.data()?.role);
 
-    if (!userDoc.exists || (role !== 'SUPER_ADMIN' && role !== 'ADMIN' && role !== 'MANAGER')) {
+    if (!userDoc.exists || (role !== 'SUPER_ADMIN' && role !== 'MANAGER')) {
       return clearSession(NextResponse.json({ error: 'Central admin access is required' }, { status: 403 }));
     }
 

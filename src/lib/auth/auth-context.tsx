@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const role = normalizeRole(userData?.role);
-    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN' && role !== 'MANAGER') return;
+    if (role !== 'SUPER_ADMIN' && role !== 'MANAGER') return;
 
     prefetchApi([
       '/api/dashboard/stats',
