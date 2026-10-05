@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest) {
     if (!auth.authorized) return NextResponse.json({ error: "Only administrators can update system users." }, { status: 403 });
 
     const data = await req.json();
-    const { id, name, role, status } = data;
+    const { id, name, role, status, password } = data;
 
     if (!id) {
       return NextResponse.json({ error: "Missing user ID" }, { status: 400 });
@@ -110,8 +110,12 @@ export async function PATCH(req: NextRequest) {
 
     await adminDb.collection('users').doc(id).update(updates);
 
-    if (name) {
-      await adminAuth.updateUser(id, { displayName: name });
+    const authUpdates: any = {};
+    if (name) authUpdates.displayName = name;
+    if (password && password.trim().length > 0) authUpdates.password = password;
+    
+    if (Object.keys(authUpdates).length > 0) {
+      await adminAuth.updateUser(id, authUpdates);
     }
     if (status) {
       // In Firebase Auth, disabled true/false controls login access

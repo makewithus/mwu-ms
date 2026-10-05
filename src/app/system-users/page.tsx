@@ -80,7 +80,9 @@ export default function SystemUsersPage() {
     try {
       if (isEditing) {
         const payload: any = { id: formData.id, name: formData.name, role: formData.role, status: formData.status };
-        // If password edit was implemented, we would include it, but let's stick to name/role/status
+        if (formData.password) {
+          payload.password = formData.password;
+        }
         const res = await fetchWithAuth('/api/system-users', { 
           method: 'PATCH', 
           headers: { 'Content-Type': 'application/json' }, 
@@ -286,13 +288,13 @@ export default function SystemUsersPage() {
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
                   <input required={!isEditing} disabled={isEditing} type="email" className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15, opacity: isEditing ? 0.5 : 1, cursor: isEditing ? 'not-allowed' : 'text' }} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
-                {!isEditing && (
-                  <div>
-                    <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
-                    <input required type="text" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
-                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Make sure to securely share this with the user.</p>
-                  </div>
-                )}
+                <div>
+                  <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {isEditing ? 'New Password (Optional)' : 'Password'}
+                  </label>
+                  <input required={!isEditing} type="text" className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={isEditing ? 'Leave blank to keep current password' : ''} />
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Make sure to securely share this with the user.</p>
+                </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Role</label>
                   <select required className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
