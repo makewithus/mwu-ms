@@ -103,7 +103,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       '/api/employees',
       '/api/projects',
       '/api/invoices',
-      '/api/integrations/events',
       '/api/system-users',
       '/api/audit',
     ]);

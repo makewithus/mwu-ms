@@ -23,7 +23,6 @@ const NAV = [
   { href: '/employees', label: 'Employees', icon: ShieldCheck },
   { href: '/projects', label: 'Projects', icon: ClipboardList },
   { href: '/invoices', label: 'Invoices', icon: DollarSign },
-  { href: '/integrations', label: 'Integrations', icon: BarChart3 },
   { href: '/audit', label: 'Audit Logs', icon: FileText },
   { href: '/system-users', label: 'System Users', icon: Settings },
 ];

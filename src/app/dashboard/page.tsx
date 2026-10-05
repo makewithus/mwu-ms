@@ -13,7 +13,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { loading: authLoading, user } = useAuth();
+  const { loading: authLoading, user, userData } = useAuth();
   const [data, setData] = useState<any>(() => getCachedApiData('/api/dashboard/stats'));
   const [loading, setLoading] = useState(() => !getCachedApiData('/api/dashboard/stats'));
 
@@ -88,10 +88,16 @@ export default function DashboardPage() {
             <div className="page-container">
               <div className="page-header">
                 <div>
-                  <h1 className="page-title">Central Admin</h1>
+                  <h1 className="page-title">
+                    {userData?.role === 'MANAGER' ? 'Manager Dashboard' : 'Central Admin'}
+                  </h1>
                   <p className="page-subtitle">Unified command center for MakeWithUs operations</p>
                 </div>
-                <div className="badge badge-red">SUPER ADMIN</div>
+                {userData?.role && (
+                  <div className={`badge ${userData.role === 'SUPER_ADMIN' ? 'badge-red' : 'badge-gray'}`}>
+                    {userData.role.replace('_', ' ')}
+                  </div>
+                )}
               </div>
 
               <section className="stats-grid" style={{ marginBottom: 20 }}>
