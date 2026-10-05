@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import { toast } from '@/components/ui/Toast';
-import { Settings, Plus, X, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Settings, Plus, X, Search, Filter, Edit, Trash2, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
 import { hasPermission } from '@/lib/auth/rbac';
 
@@ -23,6 +23,7 @@ export default function SystemUsersPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ id: '', name: '', email: '', password: '', role: 'MANAGER', status: 'active' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +58,7 @@ export default function SystemUsersPage() {
   const handleOpenCreate = () => {
     setIsEditing(false);
     setFormData({ id: '', name: '', email: '', password: '', role: 'MANAGER', status: 'active' });
+    setShowPassword(false);
     setShowModal(true);
   };
 
@@ -70,6 +72,7 @@ export default function SystemUsersPage() {
       role: u.role, 
       status: (u.status || 'active').toLowerCase() 
     });
+    setShowPassword(false);
     setShowModal(true);
   };
 
@@ -288,21 +291,41 @@ export default function SystemUsersPage() {
                 </button>
               </div>
               
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+              <form onSubmit={handleSubmit} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
-                  <input required type="text" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  <input required type="text" autoComplete="new-password" name="new-name-fix" className="input-base" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</label>
-                  <input required={!isEditing} disabled={isEditing} type="email" className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15, opacity: isEditing ? 0.5 : 1, cursor: isEditing ? 'not-allowed' : 'text' }} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                  <input required={!isEditing} disabled={isEditing} type="email" autoComplete="new-password" name="new-email-fix" className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15, opacity: isEditing ? 0.5 : 1, cursor: isEditing ? 'not-allowed' : 'text' }} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {isEditing ? 'New Password (Optional)' : 'Password'}
                   </label>
-                  <input required={!isEditing} type="password" className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={isEditing ? 'Leave blank to keep current password' : ''} />
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Must be at least 8 characters, with 1 uppercase letter, 1 number, and 1 symbol.</p>
+                  <div style={{ position: 'relative' }}>
+                    <input required={!isEditing} type={showPassword ? "text" : "password"} autoComplete="new-password" name="new-password-fix" className="input-base w-full" style={{ padding: '14px 16px', paddingRight: '48px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={isEditing ? 'Leave blank to keep current password' : ''} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                  {(!isEditing || formData.password.length > 0) && (
+                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: formData.password.length >= 8 ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                        {formData.password.length >= 8 ? <Check size={14} /> : <AlertCircle size={14} />} 8+ characters
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: /[A-Z]/.test(formData.password) ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                        {/[A-Z]/.test(formData.password) ? <Check size={14} /> : <AlertCircle size={14} />} 1 uppercase letter
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: /\d/.test(formData.password) ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                        {/\d/.test(formData.password) ? <Check size={14} /> : <AlertCircle size={14} />} 1 number
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                        {/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password) ? <Check size={14} /> : <AlertCircle size={14} />} 1 symbol
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Role</label>
