@@ -76,6 +76,15 @@ export default function SystemUsersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canManage) return;
+
+    if (!isEditing || (isEditing && formData.password.trim().length > 0)) {
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+      if (!passwordRegex.test(formData.password)) {
+        toast.error("Password must be at least 8 characters long, and contain at least one uppercase letter, one number, and one symbol.");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       if (isEditing) {
@@ -292,8 +301,8 @@ export default function SystemUsersPage() {
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {isEditing ? 'New Password (Optional)' : 'Password'}
                   </label>
-                  <input required={!isEditing} type="text" className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={isEditing ? 'Leave blank to keep current password' : ''} />
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Make sure to securely share this with the user.</p>
+                  <input required={!isEditing} type="password" className="input-base w-full" style={{ padding: '14px 16px', fontSize: 15 }} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={isEditing ? 'Leave blank to keep current password' : ''} />
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Must be at least 8 characters, with 1 uppercase letter, 1 number, and 1 symbol.</p>
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: 12, fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Role</label>

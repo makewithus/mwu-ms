@@ -45,6 +45,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid role for system user" }, { status: 400 });
     }
 
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(data.password)) {
+      return NextResponse.json({ 
+        error: "Password must be at least 8 characters long, and contain at least one uppercase letter, one number, and one symbol." 
+      }, { status: 400 });
+    }
+
     // 1. Create the user in Firebase Auth
     let userRecord;
     try {
@@ -112,7 +119,15 @@ export async function PATCH(req: NextRequest) {
 
     const authUpdates: any = {};
     if (name) authUpdates.displayName = name;
-    if (password && password.trim().length > 0) authUpdates.password = password;
+    if (password && password.trim().length > 0) {
+      const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+      if (!passwordRegex.test(password)) {
+        return NextResponse.json({ 
+          error: "Password must be at least 8 characters long, and contain at least one uppercase letter, one number, and one symbol." 
+        }, { status: 400 });
+      }
+      authUpdates.password = password;
+    }
     
     if (Object.keys(authUpdates).length > 0) {
       await adminAuth.updateUser(id, authUpdates);
