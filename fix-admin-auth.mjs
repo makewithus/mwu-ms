@@ -1,5 +1,6 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import fs from 'fs';
 
 const env = fs.readFileSync('.env', 'utf-8');
@@ -22,24 +23,50 @@ const app = initializeApp({
 });
 
 const adminAuth = getAuth(app);
+const adminDb = getFirestore(app);
 
 async function fixUser() {
   try {
-    const uid = 'mADLFY8Ve9ctFfXEWlpcxy3wcxw2';
     const email = 'admin_test@makewithus.in';
-    const password = 'admin123456';
+    const password = 'admin12345';
     
-    console.log(`Recreating Auth user for ${email}...`);
-    await adminAuth.createUser({
-      uid: uid,
-      email: email,
-      password: password,
-      emailVerified: true,
-      displayName: "Admin Test",
-    });
-    console.log("Successfully recreated Auth user!");
+    console.log(`Ensuring Auth user for ${email}...`);
+    let user;
+    try {
+      user = await adminAuth.getUserByEmail(email);
+      await adminAuth.updateUser(user.uid, {
+        password,
+        emailVerified: true,
+        displayName: "Admin Test",
+        disabled: false,
+      });
+    } catch (e) {
+      if (e.code !== 'auth/user-not-found') throw e;
+      user = await adminAuth.createUser({
+        email,
+        password,
+        emailVerified: true,
+        displayName: "Admin Test",
+      });
+    }
+
+    await adminDb.collection('users').doc(user.uid).set({
+      uid: user.uid,
+      email,
+      displayName: 'Admin Test',
+      role: 'super_admin',
+      status: 'Active',
+      isActive: true,
+      companyId: 'makewithus',
+      updatedAt: new Date(),
+    }, { merge: true });
+
+    console.log("Successfully ensured EMS super admin account.");
+    console.log("Email:", email);
+    console.log("Password:", password);
   } catch (e) {
-    console.error("Failed to recreate Auth user:", e.message);
+    console.error("Failed to ensure Auth user:", e.message);
+    process.exitCode = 1;
   }
 }
 
