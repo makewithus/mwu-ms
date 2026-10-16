@@ -250,14 +250,17 @@ service cloud.firestore {
         || (isSignedIn() && (
               resource.data.assignedTo == request.auth.uid
               || resource.data.assigneeId == request.auth.uid
+              || resource.data.createdByUid == request.auth.uid
            ));
-      allow create: if isHRAdmin() || hasCentralAccess();
+      allow create: if isHRAdmin() || hasCentralAccess() || isSignedIn();
       allow update:
         if isHRAdmin() || hasCentralAccess()
         || (isSignedIn() && (
               resource.data.assignedTo == request.auth.uid
               || resource.data.assigneeId == request.auth.uid
+              || resource.data.createdByUid == request.auth.uid
            ));
+      allow delete: if isHRAdmin() || hasCentralAccess();
     }
 
     // ── /notices ─────────────────────────────────────────────────────────
@@ -269,20 +272,29 @@ service cloud.firestore {
 
     // ── /notifications ───────────────────────────────────────────────────
     match /notifications/{notifId} {
-      allow read, update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create:       if isSignedIn();
+      allow read, write: if true;
     }
 
     // ── /settings ────────────────────────────────────────────────────────
     match /settings/{settingId} {
-      allow read:  if isSignedIn();
-      allow write: if isHRAdmin() || hasCentralAccess();
+      allow read:  if true;
+      allow write: if isHRAdmin() || hasCentralAccess() || isSignedIn();
     }
 
     // ── /auditLogs ────────────────────────────────────────────────────
     match /auditLogs/{logId} {
-      allow read:   if hasCentralAccess() || isCmsAdmin();
-      allow create: if isSignedIn();
+      allow read, create: if isSignedIn();
+      allow write:        if hasCentralAccess() || isCmsAdmin();
+    }
+
+    // ── /issues ───────────────────────────────────────────────────────
+    match /issues/{issueId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // ── /invoices ─────────────────────────────────────────────────────
+    match /invoices/{invoiceId} {
+      allow read, write: if isSignedIn();
     }
   }
 }

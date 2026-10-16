@@ -83,7 +83,12 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
 
       <div style={{ flex: 1 }} />
 
-      <button className="btn btn-ghost" style={{ position: 'relative', padding: '6px 8px', flexShrink: 0 }} title="Notifications">
+      <button
+        onClick={() => router.push('/notifications')}
+        className="btn btn-ghost"
+        style={{ position: 'relative', padding: '6px 8px', flexShrink: 0 }}
+        title="Notifications"
+      >
         <Bell size={18} />
       </button>
 

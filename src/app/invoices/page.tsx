@@ -1,9 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { apiGet, fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Sidebar from '@/components/layout/Sidebar';
-import Topbar from '@/components/layout/Topbar';
+import AdminLayout from '@/components/layout/AdminLayout';
 import { toast } from '@/components/ui/Toast';
 import { confirmAction } from '@/components/ui/ConfirmModal';
 import { Edit2, Trash2, Search, X, Printer, FileText } from 'lucide-react';
@@ -20,8 +18,6 @@ const formatDate = (dateObj: any) => {
 };
 
 export default function InvoicesPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [invoices, setInvoices] = useState<any[]>(() => getCachedApiData<{ invoices?: any[] }>('/api/invoices')?.invoices || []);
   const [clients, setClients] = useState<any[]>(() => getCachedApiData<{ clients?: any[] }>('/api/clients')?.clients || []);
   const [projects, setProjects] = useState<any[]>(() => getCachedApiData<{ projects?: any[] }>('/api/projects')?.projects || []);
@@ -34,13 +30,6 @@ export default function InvoicesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const handle = (e: any) => { setIsMobile(e.matches); setSidebarOpen(!e.matches); };
-    handle(mq); mq.addEventListener('change', handle);
-    return () => mq.removeEventListener('change', handle);
-  }, []);
 
   const fetchAll = async (force = false) => {
     if (invoices.length === 0) setLoading(true);
@@ -115,14 +104,8 @@ export default function InvoicesPage() {
   });
 
   return (
-    <ProtectedRoute>
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
-        <div style={{ position: isMobile ? 'fixed' : 'relative', zIndex: isMobile ? 50 : 'auto', transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)', transition: 'transform 0.2s', height: '100%' }}>
-          <Sidebar open={isMobile ? true : sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Topbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-          <main style={{ flex: 1, overflowY: 'auto' }}><div className="page-container">
+    <AdminLayout>
+      <div className="page-container">
             <div className="page-header">
               <div><h1 className="page-title">Invoices</h1><p className="page-subtitle">Track billing and payments</p></div>
               <button className="btn btn-primary" onClick={() => { if(showCreate) resetForm(); else setShowCreate(true); }}>{showCreate ? 'Cancel' : '+ New Invoice'}</button>
@@ -182,10 +165,8 @@ export default function InvoicesPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div></main>
+          </div>
         </div>
-      </div>
-    </ProtectedRoute>
+    </AdminLayout>
   );
 }

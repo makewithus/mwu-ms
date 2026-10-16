@@ -2,9 +2,8 @@
 import { useEffect, useState } from 'react';
 import { collection, query, onSnapshot, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Sidebar from '@/components/layout/Sidebar';
-import Topbar from '@/components/layout/Topbar';
+import AdminLayout from '@/components/layout/AdminLayout';
+import { fetchWithAuth } from '@/lib/api-client';
 
 const formatDate = (dateObj: any) => {
   if (!dateObj) return 'N/A';
@@ -18,28 +17,23 @@ const formatDate = (dateObj: any) => {
 };
 
 export default function AuditLogsPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userMap, setUserMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const handle = (e: any) => { setIsMobile(e.matches); setSidebarOpen(!e.matches); };
-    handle(mq); mq.addEventListener('change', handle);
-    return () => mq.removeEventListener('change', handle);
-  }, []);
-
-  useEffect(() => {
     // Fetch users for resolving actor names
-    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-      const map: Record<string, any> = {};
-      snapshot.forEach(doc => {
-        map[doc.id] = doc.data();
-      });
-      setUserMap(map);
-    });
+    const unsubUsers = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const map: Record<string, any> = {};
+        snapshot.forEach(doc => {
+          map[doc.id] = doc.data();
+        });
+        setUserMap(map);
+      },
+      () => {}
+    );
 
     const unsubLogs = onSnapshot(
       query(collection(db, "auditLogs"), orderBy("timestamp", "desc"), limit(200)),
@@ -47,8 +41,14 @@ export default function AuditLogsPage() {
         setLogs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         setLoading(false);
       },
-      (error) => {
-        console.error("Error fetching audit logs:", error);
+      async () => {
+        try {
+          const res = await fetchWithAuth('/api/audit');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.logs) setLogs(data.logs);
+          }
+        } catch {}
         setLoading(false);
       }
     );
@@ -59,13 +59,8 @@ export default function AuditLogsPage() {
   }, []);
 
   return (
-    <ProtectedRoute>
-      <div className="flex h-screen bg-bg">
-        <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Topbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-          <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-            <div className="page-container">
+    <AdminLayout>
+      <div className="page-container">
               <div className="page-header">
                 <div>
                   <h1 className="page-title flex items-center gap-2">
@@ -141,10 +136,7 @@ export default function AuditLogsPage() {
                 </table>
               </div>
             </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    </ProtectedRoute>
+          </div>
+    </AdminLayout>
   );
 }

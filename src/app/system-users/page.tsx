@@ -1,9 +1,7 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { fetchWithAuth, getCachedApiData, invalidateApiCache } from '@/lib/api-client';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Sidebar from '@/components/layout/Sidebar';
-import Topbar from '@/components/layout/Topbar';
+import AdminLayout from '@/components/layout/AdminLayout';
 import { toast } from '@/components/ui/Toast';
 import { Settings, Plus, X, Search, Filter, Edit, Trash2, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -13,8 +11,6 @@ export default function SystemUsersPage() {
   const { userData, loading: authLoading, user } = useAuth();
   const canManage = hasPermission(userData?.role, 'canManageSystemUsers');
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [users, setUsers] = useState<any[]>(() => getCachedApiData<{ users?: any[] }>('/api/system-users')?.users || []);
   const [loading, setLoading] = useState(() => !getCachedApiData('/api/system-users'));
   
@@ -29,13 +25,6 @@ export default function SystemUsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const handle = (e: any) => { setIsMobile(e.matches); setSidebarOpen(!e.matches); };
-    handle(mq); mq.addEventListener('change', handle);
-    return () => mq.removeEventListener('change', handle);
-  }, []);
 
   const loadUsers = async () => {
     try {
@@ -147,14 +136,8 @@ export default function SystemUsersPage() {
   }, [users, searchTerm, roleFilter, statusFilter]);
 
   return (
-    <ProtectedRoute requiredPermission="canManageSystemUsers">
-      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-primary)' }}>
-        <Sidebar open={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Topbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-          
-          <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-            <div className="page-container">
+    <AdminLayout requiredPermission="canManageSystemUsers">
+      <div className="page-container">
               <div className="page-header">
                 <div>
                   <h1 className="page-title flex items-center gap-2">
@@ -277,8 +260,6 @@ export default function SystemUsersPage() {
                 </div>
               </div>
             </div>
-          </main>
-        </div>
 
         {/* Create/Edit Modal */}
         {showModal && (
@@ -353,7 +334,6 @@ export default function SystemUsersPage() {
             </div>
           </div>
         )}
-      </div>
-    </ProtectedRoute>
+    </AdminLayout>
   );
 }
